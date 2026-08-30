@@ -19,14 +19,13 @@ grade: stable
 confinement: strict
 platforms:
   amd64:
+  arm64:
 
 apps:
   tabletop-club:
-    command: TabletopClub.x86_64
+    command: TabletopClub
     plugs: [home, x11, desktop, removable-media, shared-memory, opengl, network, audio-playback ]
     extensions: [ gnome ]
-    environment:
-       VK_ICD_FILENAMES: "/var/lib/snapd/lib/vulkan/icd.d/nvidia_icd.json:$SNAP/usr/share/vulkan/icd.d/radeon.x86_64.json:$SNAP/usr/share/vulkan/icd.d/intel_icd.x86_64.json"
 
 plugs:
   shared-memory:
@@ -34,9 +33,18 @@ plugs:
 
 parts:
   main:
-    source: https://github.com/drwhut/tabletop-club/releases/download/v${SNAPCRAFT_PROJECT_VERSION}/TabletopClub_v${SNAPCRAFT_PROJECT_VERSION}_Linux_64.zip
+    source:
+      - to amd64: https://github.com/drwhut/tabletop-club/releases/download/v${SNAPCRAFT_PROJECT_VERSION}/TabletopClub_v${SNAPCRAFT_PROJECT_VERSION}_Linux_64.zip
+      - to arm64: https://github.com/drwhut/tabletop-club/releases/download/v${SNAPCRAFT_PROJECT_VERSION}/TabletopClub_v${SNAPCRAFT_PROJECT_VERSION}_Linux_ARM64.zip
     plugin: dump
     source-type: zip
+    override-build: |
+       craftctl default
+       case "${CRAFT_ARCH_BUILD_FOR}" in
+         amd64) BIN_ARCH=x86_64 ;;
+         arm64) BIN_ARCH=arm64 ;;
+       esac
+       mv "${CRAFT_PART_INSTALL}/TabletopClub.${BIN_ARCH}" "${CRAFT_PART_INSTALL}/TabletopClub"
     stage-packages:
        - libgbm1
        - libgtk-3-0
@@ -75,13 +83,3 @@ layout:
     bind: $SNAP/assets
   /usr/share/vulkan:
     symlink: $SNAP/usr/share/vulkan
-  /usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libvulkan_intel.so:
-    symlink: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libvulkan_intel.so
-  /usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libvulkan_radeon.so:
-    symlink: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libvulkan_lvp.so
-  /usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libvulkan_lvp.so:
-    symlink: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libvulkan_lvp.so
-  /usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libGLX_nvidia.so.0:
-    symlink: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libGLX_nvidia.so.0
-  /usr/share/libdrm:
-    bind: $SNAP/usr/share/libdrm
